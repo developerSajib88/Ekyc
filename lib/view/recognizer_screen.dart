@@ -46,7 +46,7 @@ class _RecognizerScreenState extends State<RecognizerScreen> {
             builder: (context,_,__) {
               return Visibility(
                 visible: text.value != null,
-                replacement: const Center(child: CircularProgressIndicator(color: Colors.white,),),
+                replacement: const Center(child: CircularProgressIndicator(color: Colors.blue),),
                 child: Text(
                   text.value ?? ""
                 ),

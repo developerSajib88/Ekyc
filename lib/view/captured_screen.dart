@@ -72,8 +72,15 @@ class _CapturedScreenState extends State<CapturedScreen> {
 
                       // Blurred Background
                       Positioned.fill(
-                        child: CameraPreview(controller),
+                        child: Center(
+                          child: SizedBox(
+                              width: double.infinity,
+                              height: 500,
+                              child: CameraPreview(controller)
+                          ),
+                        ),
                       ),
+
                       // Transparent Cut-Out Effect
                       Center(
                         child: ClipPath(
@@ -101,7 +108,7 @@ class _CapturedScreenState extends State<CapturedScreen> {
                       ),
 
                       Positioned(
-                        bottom: 50,
+                        bottom: 30,
                         child: InkWell(
                           onTap: ()async{
                             await controller.takePicture().then((image){
