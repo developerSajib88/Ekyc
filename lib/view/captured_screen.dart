@@ -1,7 +1,9 @@
 import 'dart:ui';
 
 import 'package:camera/camera.dart';
+import 'package:ekyc/view/recognizer_screen.dart';
 import 'package:ekyc/widgets/hole_clipper.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/border_painter.dart';
@@ -101,8 +103,10 @@ class _CapturedScreenState extends State<CapturedScreen> {
                       Positioned(
                         bottom: 50,
                         child: InkWell(
-                          onTap: (){
-
+                          onTap: ()async{
+                            await controller.takePicture().then((image){
+                              Navigator.push(context, CupertinoPageRoute(builder: (context)=> RecognizerScreen(image: image)));
+                            });
                           },
                           child: const CircleAvatar(
                             radius: 35,
