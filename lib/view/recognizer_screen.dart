@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
 class RecognizerScreen extends StatefulWidget {
-  final XFile image;
+  final File image;
   const RecognizerScreen({super.key,required this.image});
 
   @override
@@ -20,8 +20,14 @@ class _RecognizerScreenState extends State<RecognizerScreen> {
     await TextRecognizer(
         script: TextRecognitionScript.devanagiri
     ).processImage(
-        InputImage.fromFile(File(widget.image.path))
+        InputImage.fromFile(widget.image)
     ).then((scannedText){
+      scannedText.blocks.forEach((bloc){
+        print(bloc.text);
+        bloc.lines.forEach((line){
+          print("hi>>>${line.elements.last.text}");
+        });
+      });
       text.value = scannedText.text;
     });
   }

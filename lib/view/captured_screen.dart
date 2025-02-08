@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:camera/camera.dart';
@@ -112,7 +113,7 @@ class _CapturedScreenState extends State<CapturedScreen> {
                         child: InkWell(
                           onTap: ()async{
                             await controller.takePicture().then((image){
-                              Navigator.push(context, CupertinoPageRoute(builder: (context)=> RecognizerScreen(image: image)));
+                              Navigator.push(context, CupertinoPageRoute(builder: (context)=> RecognizerScreen(image: File(image.path))));
                             });
                           },
                           child: const CircleAvatar(
