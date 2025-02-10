@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:camera/camera.dart';
 import 'package:ekyc/view/captured_screen.dart';
 import 'package:ekyc/view/recognizer_screen.dart';
 import 'package:flutter/material.dart';
@@ -37,6 +36,8 @@ class _MyWidgetState extends State<MyWidget> {
     pageLimit: 3, // setting a limit to the number of pages scanned
     isGalleryImport: true, // importing from the photo gallery
   );
+
+
 
 
   Future<void> scanDocument()async{
