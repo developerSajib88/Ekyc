@@ -1,8 +1,9 @@
 import 'dart:io';
 
-import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:image/image.dart' as img;
 
 class RecognizerScreen extends StatefulWidget {
   final File image;
@@ -17,6 +18,7 @@ class _RecognizerScreenState extends State<RecognizerScreen> {
   ValueNotifier<bool> isLoading = ValueNotifier<bool>(true);
   ValueNotifier<bool> isNotNIDCard = ValueNotifier<bool>(false);
   ValueNotifier<Map<String,String>?> data = ValueNotifier<Map<String,String>?>(null);
+  ValueNotifier<File?> nidFace = ValueNotifier<File?>(null);
 
   // Future<void> recognizeText()async{
   //   await TextRecognizer(
@@ -33,6 +35,12 @@ class _RecognizerScreenState extends State<RecognizerScreen> {
   //     text.value = scannedText.text;
   //   });
   // }
+
+
+
+
+
+
 
 
 
@@ -105,13 +113,82 @@ class _RecognizerScreenState extends State<RecognizerScreen> {
 
 
 
+  /// ======CAPTURED NID FACE==========
+
+  Future<Face?> detectFace(File imageFile) async {
+    final inputImage = InputImage.fromFile(imageFile);
+    final faceDetector = FaceDetector(
+      options: FaceDetectorOptions(enableContours: true, enableLandmarks: true),
+    );
+
+    final List<Face> faces = await faceDetector.processImage(inputImage);
+    await faceDetector.close();
+
+    if (faces.isEmpty) {
+      print("No face detected.");
+      return null;
+    }
+
+    return faces.first; // Assuming the first detected face is the NID profile image
+  }
+
+
+  Future<File?> cropFace(File imageFile, Face face) async {
+    // Load the image
+    img.Image? originalImage = img.decodeImage(await imageFile.readAsBytes());
+    if (originalImage == null) return null;
+
+    // Get the bounding box of the detected face
+    final boundingBox = face.boundingBox;
+    int x = boundingBox.left.toInt();
+    int y = boundingBox.top.toInt();
+    int width = boundingBox.width.toInt();
+    int height = boundingBox.height.toInt();
+
+    // Ensure cropping values are within the image bounds
+    x = x.clamp(0, originalImage.width);
+    y = y.clamp(0, originalImage.height);
+    width = width.clamp(0, originalImage.width - x);
+    height = height.clamp(0, originalImage.height - y);
+
+    // Crop the face region
+    img.Image croppedFace = img.copyCrop(originalImage, x: x, y: y, width: width, height: height);
+
+    // Save the cropped image
+    File faceImageFile = File(imageFile.path.replaceAll('.jpg', '_face.jpg'))
+      ..writeAsBytesSync(img.encodeJpg(croppedFace));
+
+    return faceImageFile;
+  }
+
+
+
+  Future<void> extractNIDProfileImage() async {
+
+    Face? face = await detectFace(widget.image);
+    if (face == null) {
+      print("No face found on the NID card.");
+      return;
+    }
+
+    File? faceImage = await cropFace(widget.image, face);
+    if (faceImage != null) {
+      nidFace.value = faceImage;
+      print("Profile image extracted and saved at: ${faceImage.path}");
+    }
+  }
+
+
+
 
   @override
   void initState(){
     // TODO: implement initState
     super.initState();
     detectNIDCard().whenComplete((){
-      isLoading.value = false;
+      extractNIDProfileImage().whenComplete((){
+        isLoading.value = false;
+      });
     });
   }
 
@@ -150,7 +227,20 @@ class _RecognizerScreenState extends State<RecognizerScreen> {
                               ),
                             ),
                             child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
+
+                                ValueListenableBuilder(
+                                    valueListenable: nidFace,
+                                    builder: (_,__,___)=>
+                                      nidFace.value == null ?
+                                        const Icon(Icons.account_circle)
+                                      : Image.file(
+                                         nidFace.value!
+                                      )
+                                ),
+
                                 Text("Name : ${data.value?["Name"]}"),
                                 const SizedBox(height: 10),
                                 Text("Date of Birth : ${data.value?["Date of Birth"]}"),

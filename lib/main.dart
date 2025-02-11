@@ -4,6 +4,7 @@ import 'package:ekyc/view/captured_screen.dart';
 import 'package:ekyc/view/recognizer_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_document_scanner/google_mlkit_document_scanner.dart';
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
 void main() {
   runApp(const MyApp());
@@ -36,8 +37,6 @@ class _MyWidgetState extends State<MyWidget> {
     pageLimit: 3, // setting a limit to the number of pages scanned
     isGalleryImport: true, // importing from the photo gallery
   );
-
-
 
 
   Future<void> scanDocument()async{
