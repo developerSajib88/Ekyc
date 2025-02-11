@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:ekyc/view/captured_screen.dart';
+import 'package:ekyc/view/face_detection_screen.dart';
 import 'package:ekyc/view/recognizer_screen.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_document_scanner/google_mlkit_document_scanner.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
@@ -61,17 +63,25 @@ class _MyWidgetState extends State<MyWidget> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
 
+            // ElevatedButton(
+            //     onPressed: ()=> Navigator.push(context, MaterialPageRoute(builder: (context)=> const CapturedScreen())),
+            //     child: const Text("Option 1")
+            // ),
+            //
+            // const SizedBox(height: 10,),
+
             ElevatedButton(
-                onPressed: ()=> Navigator.push(context, MaterialPageRoute(builder: (context)=> const CapturedScreen())),
-                child: const Text("Option 1")
+                onPressed: ()=> scanDocument(),
+                child: const Text("NID Scan")
             ),
 
             const SizedBox(height: 10,),
 
             ElevatedButton(
-                onPressed: ()=> scanDocument(),
-                child: const Text("Option 2")
+                onPressed: ()=> Navigator.push(context, CupertinoPageRoute(builder: (context)=> const FaceDetectionScreen())),
+                child: const Text("Face Verify")
             ),
+
 
           ],
         ),

@@ -1,5 +1,7 @@
 import 'dart:developer';
+import 'dart:io';
 
+import 'package:camera/camera.dart';
 import 'package:facelivenessdetection/facelivenessdetection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -23,80 +25,114 @@ class _FaceDetector extends StatefulWidget {
 class __FaceDetectorState extends State<_FaceDetector> {
   final List<Rulesets> _completedRuleset = [];
   final TextStyle _textStyle = const TextStyle();
+  final ValueNotifier<List<XFile>> images = ValueNotifier<List<XFile>>([]);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(),
-      body: FaceDetectorView(
-          onSuccessValidation: (validated) {
-            log('Face verification is completed', name: 'Validation');
-          },
-          onValidationDone: (controller) {
-            return const Text('Completed');
-          },
-          child: ({required countdown, required state, required hasFace}) =>
-              Column(
-                children: [
-                  const Text(
-                      'dkjsad klsal jdkksja dslakd sakdsa dlksa dsajkldsakljds akdklsjad sakljdsa dslad sajkld sakljdsa ldksak ldjska ldkljsa dsakld jsads'),
-                  const SizedBox(height: 20),
-                  Row(
-                      spacing: 10,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Image.asset('assets/face_verification_icon.png',
-                        //     height: 30, width: 30),
+      body: ValueListenableBuilder(
+        valueListenable: images,
+        builder: (context,__,_) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              FaceDetectorView(
+                backgroundColor: Colors.transparent,
+                  images: (image){
+                    images.value.add(image);
+                    setState(() {});
+                    print(images.value);
+                    log("Captured Image: $image", name: "Image");
+                  },
+                  onSuccessValidation: (validated) {
+                    log('Face verification is completed', name: 'Validation');
+                  },
+                  onValidationDone: (controller) {
+                    return const SizedBox.shrink();
+                  },
+                  child: ({required countdown, required state, required hasFace}) =>
+                      Column(
+                        children: [
 
-                        Flexible(
-                            child: AnimatedSize(
-                                duration: const Duration(milliseconds: 150),
-                                child: Text(
-                                  hasFace
-                                      ? 'User face found'
-                                      : 'User face not found',
-                                  style: _textStyle.copyWith(
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.w400,
-                                      fontSize: 12),
-                                )))
-                      ]),
-                  const SizedBox(height: 30),
-                  Text(getHintText(state),
-                      style: _textStyle.copyWith(
-                          color: Colors.black,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 20)),
-                  if (countdown > 0)
-                    Text.rich(
-                      textAlign: TextAlign.center,
-                      TextSpan(children: [
-                        const TextSpan(text: 'IN'),
-                        const TextSpan(text: '\n'),
-                        TextSpan(
-                            text: countdown.toString(),
-                            style: _textStyle.copyWith(
-                                color: Colors.black,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 22))
-                      ]),
-                      style: _textStyle.copyWith(
-                          color: Colors.black,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16),
-                    )
-                  else ...[
-                    const SizedBox(height: 50),
-                    const CupertinoActivityIndicator()
-                  ]
-                ],
-              ),
-          onRulesetCompleted: (ruleset) {
-            if (!_completedRuleset.contains(ruleset)) {
-              _completedRuleset.add(ruleset);
-            }
-          }),
+                          Row(
+                              spacing: 10,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Image.asset('assets/face_verification_icon.png',
+                                //     height: 30, width: 30),
+
+
+                                const SizedBox(height: 50),
+
+                                Flexible(
+                                    child: AnimatedSize(
+                                        duration: const Duration(milliseconds: 150),
+                                        child: Text(
+                                          hasFace
+                                              ? 'User face found'
+                                              : 'User face not found',
+                                          style: _textStyle.copyWith(
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.w400,
+                                              fontSize: 12),
+                                        )))
+                              ]),
+                          Text(getHintText(state),
+                              style: _textStyle.copyWith(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 20)),
+                          if (countdown > 0)
+                            Text.rich(
+                              textAlign: TextAlign.center,
+                              TextSpan(children: [
+                                const TextSpan(text: 'IN'),
+                                const TextSpan(text: '\n'),
+                                TextSpan(
+                                    text: countdown.toString(),
+                                    style: _textStyle.copyWith(
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 22))
+                              ]),
+                              style: _textStyle.copyWith(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16),
+                            )
+                          else ...[
+                            const SizedBox(height: 10),
+                            const CupertinoActivityIndicator()
+                          ]
+                        ],
+                      ),
+                  onRulesetCompleted: (ruleset) {
+                    if (!_completedRuleset.contains(ruleset)) {
+                      _completedRuleset.add(ruleset);
+                    }
+                  }),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: images.value.map((image){
+                  return Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Image.file(
+                      File(image.path),
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                    ),
+                  );
+                }).toList(),
+              )
+            ],
+          );
+        }
+      ),
     );
   }
 }
