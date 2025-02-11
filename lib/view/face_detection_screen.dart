@@ -1,8 +1,7 @@
 import 'dart:developer';
 import 'dart:io';
-
 import 'package:camera/camera.dart';
-import 'package:facelivenessdetection/facelivenessdetection.dart';
+import 'package:face_liveness_detection/face_liveness_detection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 

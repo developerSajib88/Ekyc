@@ -113,13 +113,12 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.8"
-  facelivenessdetection:
+  face_liveness_detection:
     dependency: "direct main"
     description:
-      name: facelivenessdetection
-      sha256: e42fc9f80e048f36767afba2d7e137ce1b4c78df61b5395693d97aa6b3dc6236
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/face_liveness_detection"
+      relative: true
+    source: path
     version: "1.0.12"
   fake_async:
     dependency: transitive
