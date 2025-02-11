@@ -7,6 +7,7 @@ import 'package:face_liveness_detection/src/rule_set/rule_set.dart';
 import 'package:flutter/material.dart';
 
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
+import 'package:just_audio/just_audio.dart';
 
 class FaceDetectorView extends StatefulWidget {
   final Size cameraSize;
@@ -72,15 +73,25 @@ class _FaceDetectorViewState extends State<FaceDetectorView> {
   Debouncer? _debouncer;
   CameraController? controller;
   bool hasFace = false;
+  final player = AudioPlayer();
 
 
 
   Future<void> takePicture()async{
     if(controller != null){
-      await controller?.takePicture().then((image){
+      await controller?.takePicture().then((image)async{
         widget.images?.call(image);
+        await player.stop();
       });
     }
+  }
+
+
+  Future<void> voiceRun({required String path})async{
+    await player.setUrl('asset:$path');                 // Schemes: (https: | file: | asset: )
+    await player.play();
+    //await player.setSpeed(1.0);
+    await player.setVolume(1);
   }
 
 
@@ -268,6 +279,7 @@ class _FaceDetectorViewState extends State<FaceDetectorView> {
     if (rotX == null) return false;
 
     if (!up) {
+      voiceRun(path: 'assets/voices/up.mp3');
       dev.log(rotX.toString(), name: 'Head Movement');
       if (rotX < -20) {
         // Adjust threshold if needed
@@ -276,6 +288,7 @@ class _FaceDetectorViewState extends State<FaceDetectorView> {
         return true;
       }
     } else {
+      voiceRun(path: 'assets/voices/down.mp3');
       if (rotX > 20) {
         widget.onRulesetCompleted?.call(Rulesets.tiltUp);
         takePicture();
@@ -297,6 +310,7 @@ class _FaceDetectorViewState extends State<FaceDetectorView> {
     final double? rotY = face.headEulerAngleY;
     if (rotY == null) return false;
     if (left) {
+      voiceRun(path: 'assets/voices/left.mp3');
       if (rotY < -40) {
         widget.onRulesetCompleted?.call(Rulesets.toLeft);
         takePicture();
@@ -304,6 +318,7 @@ class _FaceDetectorViewState extends State<FaceDetectorView> {
       }
     } else {
       if (rotY > 40) {
+        voiceRun(path: 'assets/voices/right.mp3');
         widget.onRulesetCompleted?.call(Rulesets.toRight);
         takePicture();
         return true;
@@ -313,6 +328,7 @@ class _FaceDetectorViewState extends State<FaceDetectorView> {
   }
 
   bool _onBlinkDetected(Face face) {
+    voiceRun(path: 'assets/voices/blink.mp3');
     final double? leftEyeOpenProb = face.leftEyeOpenProbability;
     final double? rightEyeOpenProb = face.rightEyeOpenProbability;
     const double eyeOpenThreshold = 0.6;
@@ -328,6 +344,7 @@ class _FaceDetectorViewState extends State<FaceDetectorView> {
   }
 
   bool _onSmilingDetected(Face face) {
+    voiceRun(path: 'assets/voices/smile.mp3');
     if (face.smilingProbability != null) {
       final double? smileProb = face.smilingProbability;
       if ((smileProb ?? 0) > .5) {
