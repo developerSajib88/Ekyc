@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:ekyc/view/face_detection_screen.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
@@ -246,7 +248,14 @@ class _RecognizerScreenState extends State<RecognizerScreen> {
                                 Text("Date of Birth : ${data.value?["Date of Birth"]}"),
                                 const SizedBox(height: 10),
                                 Text("ID Number : ${data.value?["ID Number"]}"),
-                                const SizedBox(height: 10)
+                                const SizedBox(height: 10),
+
+
+                                ElevatedButton(
+                                    onPressed: ()=> Navigator.push(context, CupertinoPageRoute(builder: (context)=> const FaceDetectionScreen())),
+                                    child: const Text("Face Verify")
+                                ),
+
                               ],
                             ),
                           );
