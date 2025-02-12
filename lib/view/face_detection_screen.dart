@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'dart:io';
+import 'package:assets_audio_player_plus/assets_audio_player.dart';
 import 'package:camera/camera.dart';
 import 'package:face_liveness_detection/face_liveness_detection.dart';
 import 'package:flutter/cupertino.dart';
@@ -26,6 +27,47 @@ class __FaceDetectorState extends State<_FaceDetector> {
   final TextStyle _textStyle = const TextStyle();
   final ValueNotifier<List<XFile>> images = ValueNotifier<List<XFile>>([]);
 
+
+
+  String voiceType({required Rulesets rulesets}){
+    switch(rulesets){
+
+      case Rulesets.smiling:
+        return "assets/voices/smile.mp3";
+
+      case Rulesets.blink:
+        return "assets/voices/blink.mp3";
+
+      case Rulesets.toRight:
+        return "assets/voices/right.mp3";
+
+      case Rulesets.toLeft:
+        return "assets/voices/left.mp3";
+
+      case Rulesets.tiltUp:
+        return "assets/voices/up.mp3";
+
+      case Rulesets.tiltDown:
+        return "assets/voices/down.mp3";
+
+      case Rulesets.complete:
+        return "assets/voices/complete.mp3";
+
+    }
+  }
+
+
+  Future<void> playVoice({required Rulesets rulesets}) async {
+    AssetsAudioPlayerPlus player = AssetsAudioPlayerPlus();
+    try {
+      await player.open(Audio(voiceType(rulesets: rulesets)));
+      await player.play();
+    } catch (error, stackTrace) {
+      log("Voice Issue: $error", stackTrace: stackTrace, name: "Voice Player");
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -37,8 +79,20 @@ class __FaceDetectorState extends State<_FaceDetector> {
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+
+              ElevatedButton(
+                  onPressed: (){
+                    playVoice(rulesets: Rulesets.smiling);
+                  },
+                  child: Text("hello")
+              ),
+
+
               FaceDetectorView(
                 backgroundColor: Colors.transparent,
+                  currentRuleset: (rulesets){
+                    playVoice(rulesets: rulesets);
+                  },
                   images: (image){
                     images.value.add(image);
                     setState(() {});
@@ -109,6 +163,7 @@ class __FaceDetectorState extends State<_FaceDetector> {
                         ],
                       ),
                   onRulesetCompleted: (ruleset) {
+                    print("##############################################");
                     if (!_completedRuleset.contains(ruleset)) {
                       _completedRuleset.add(ruleset);
                     }
@@ -157,6 +212,8 @@ String getHintText(Rulesets state) {
     case Rulesets.toRight:
       hint_ = 'Please Look Right';
       break;
+    case Rulesets.complete:
+      hint_ = 'Complete';
   }
   return hint_;
 }

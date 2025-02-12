@@ -14,6 +14,7 @@ class FaceDetectorView extends StatefulWidget {
   final Function(XFile)? images;
   final void Function(Rulesets ruleset)? onRulesetCompleted;
   final List<Rulesets> ruleset;
+  final Function(Rulesets)? currentRuleset;
   final Color activeProgressColor;
   final Color progressColor;
 
@@ -40,6 +41,7 @@ class FaceDetectorView extends StatefulWidget {
       ],
       required this.child,
       this.images,
+      this.currentRuleset,
       this.progressColor = Colors.green,
       this.activeProgressColor = Colors.red,
       this.totalDots = 60,
@@ -82,6 +84,7 @@ class _FaceDetectorViewState extends State<FaceDetectorView> {
       });
     }
   }
+
 
 
   @override
@@ -241,6 +244,9 @@ class _FaceDetectorViewState extends State<FaceDetectorView> {
       case Rulesets.toRight:
         isDetected = _detectRightHeadMovement(face);
         break;
+      case Rulesets.complete:
+        // TODO: Handle this case.
+        throw UnimplementedError();
     }
     if (!isDetected) {
       ruleset.value.insert(0, currentRuleset);
@@ -268,6 +274,7 @@ class _FaceDetectorViewState extends State<FaceDetectorView> {
     if (rotX == null) return false;
 
     if (!up) {
+      widget.currentRuleset?.call(Rulesets.tiltDown);
       dev.log(rotX.toString(), name: 'Head Movement');
       if (rotX < -20) {
         // Adjust threshold if needed
@@ -276,6 +283,7 @@ class _FaceDetectorViewState extends State<FaceDetectorView> {
         return true;
       }
     } else {
+      widget.currentRuleset?.call(Rulesets.tiltUp);
       if (rotX > 20) {
         widget.onRulesetCompleted?.call(Rulesets.tiltUp);
         takePicture();
@@ -297,12 +305,14 @@ class _FaceDetectorViewState extends State<FaceDetectorView> {
     final double? rotY = face.headEulerAngleY;
     if (rotY == null) return false;
     if (left) {
+      widget.currentRuleset?.call(Rulesets.toLeft);
       if (rotY < -40) {
         widget.onRulesetCompleted?.call(Rulesets.toLeft);
         takePicture();
         return true;
       }
     } else {
+      widget.currentRuleset?.call(Rulesets.toRight);
       if (rotY > 40) {
         widget.onRulesetCompleted?.call(Rulesets.toRight);
         takePicture();
@@ -313,6 +323,7 @@ class _FaceDetectorViewState extends State<FaceDetectorView> {
   }
 
   bool _onBlinkDetected(Face face) {
+    widget.currentRuleset?.call(Rulesets.blink);
     final double? leftEyeOpenProb = face.leftEyeOpenProbability;
     final double? rightEyeOpenProb = face.rightEyeOpenProbability;
     const double eyeOpenThreshold = 0.6;
@@ -328,6 +339,7 @@ class _FaceDetectorViewState extends State<FaceDetectorView> {
   }
 
   bool _onSmilingDetected(Face face) {
+    widget.currentRuleset?.call(Rulesets.smiling);
     if (face.smilingProbability != null) {
       final double? smileProb = face.smilingProbability;
       if ((smileProb ?? 0) > .5) {

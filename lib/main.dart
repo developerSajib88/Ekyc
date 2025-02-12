@@ -1,12 +1,10 @@
 import 'dart:io';
 
-import 'package:ekyc/view/captured_screen.dart';
 import 'package:ekyc/view/face_detection_screen.dart';
 import 'package:ekyc/view/recognizer_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_document_scanner/google_mlkit_document_scanner.dart';
-import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
 void main() {
   runApp(const MyApp());
@@ -43,7 +41,7 @@ class _MyWidgetState extends State<MyWidget> {
 
   Future<void> scanDocument()async{
     await DocumentScanner(options: documentOptions).scanDocument().then((document){
-      Navigator.push(context, MaterialPageRoute(builder: (context)=> 
+      Navigator.push(context, MaterialPageRoute(builder: (context)=>
           RecognizerScreen(
               image: File(document.images[0])
           )
@@ -70,6 +68,7 @@ class _MyWidgetState extends State<MyWidget> {
             //
             // const SizedBox(height: 10,),
 
+
             ElevatedButton(
                 onPressed: ()=> scanDocument(),
                 child: const Text("NID Scan")
@@ -89,4 +88,6 @@ class _MyWidgetState extends State<MyWidget> {
     );
   }
 }
+
+
 
