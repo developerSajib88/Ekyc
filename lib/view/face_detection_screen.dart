@@ -108,9 +108,10 @@ class __FaceDetectorState extends State<_FaceDetector> {
                     log("Captured Image: $image", name: "Image");
                   },
                   onSuccessValidation: (validated) {
-                    if(validated)  player.dispose();
+                    if(validated) player.dispose();
                   },
                   onValidationDone: (controller) {
+                    player.dispose();
                     return const SizedBox.shrink();
                   },
                   child: ({required countdown, required state, required hasFace}) =>
