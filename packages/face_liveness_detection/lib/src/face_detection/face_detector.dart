@@ -10,6 +10,7 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
 class FaceDetectorView extends StatefulWidget {
   final Size cameraSize;
+  final Function(bool)? hasFace;
   final Function(bool validated)? onSuccessValidation;
   final Function(XFile)? images;
   final void Function(Rulesets ruleset)? onRulesetCompleted;
@@ -40,6 +41,7 @@ class FaceDetectorView extends StatefulWidget {
         Rulesets.tiltDown
       ],
       required this.child,
+      this.hasFace,
       this.images,
       this.currentRuleset,
       this.progressColor = Colors.green,
@@ -159,6 +161,7 @@ class _FaceDetectorViewState extends State<FaceDetectorView> {
                   valueListenable: _currentTest,
                   builder: (context, state, child) {
                     if (state != null) {
+                      widget.hasFace?.call(hasFace);
                       return widget.child(
                           state: state,
                           countdown: _debouncer!.timeLeft,
@@ -226,6 +229,8 @@ class _FaceDetectorViewState extends State<FaceDetectorView> {
     var currentRuleset = ruleset.value.removeAt(0);
     bool isDetected = false;
     switch (currentRuleset) {
+      case Rulesets.notFound:
+        break;
       case Rulesets.smiling:
         isDetected = _onSmilingDetected(face);
         break;
@@ -245,8 +250,7 @@ class _FaceDetectorViewState extends State<FaceDetectorView> {
         isDetected = _detectRightHeadMovement(face);
         break;
       case Rulesets.complete:
-        // TODO: Handle this case.
-        throw UnimplementedError();
+        break;
     }
     if (!isDetected) {
       ruleset.value.insert(0, currentRuleset);
@@ -280,6 +284,7 @@ class _FaceDetectorViewState extends State<FaceDetectorView> {
         // Adjust threshold if needed
         widget.onRulesetCompleted?.call(Rulesets.tiltUp);
         takePicture();
+        widget.currentRuleset?.call(Rulesets.complete);
         return true;
       }
     } else {
@@ -305,14 +310,14 @@ class _FaceDetectorViewState extends State<FaceDetectorView> {
     final double? rotY = face.headEulerAngleY;
     if (rotY == null) return false;
     if (left) {
-      widget.currentRuleset?.call(Rulesets.toLeft);
+      widget.currentRuleset?.call(Rulesets.toRight);
       if (rotY < -40) {
         widget.onRulesetCompleted?.call(Rulesets.toLeft);
         takePicture();
         return true;
       }
     } else {
-      widget.currentRuleset?.call(Rulesets.toRight);
+      widget.currentRuleset?.call(Rulesets.toLeft);
       if (rotY > 40) {
         widget.onRulesetCompleted?.call(Rulesets.toRight);
         takePicture();

@@ -1,1 +1,1 @@
-enum Rulesets { toLeft, toRight, blink, tiltUp, tiltDown, smiling, complete }
+enum Rulesets { notFound, toLeft, toRight, blink, tiltUp, tiltDown, smiling, complete }

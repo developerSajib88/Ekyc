@@ -26,11 +26,14 @@ class __FaceDetectorState extends State<_FaceDetector> {
   final List<Rulesets> _completedRuleset = [];
   final TextStyle _textStyle = const TextStyle();
   final ValueNotifier<List<XFile>> images = ValueNotifier<List<XFile>>([]);
-
+  late AssetsAudioPlayerPlus player;
 
 
   String voiceType({required Rulesets rulesets}){
     switch(rulesets){
+
+      case Rulesets.notFound:
+        return "assets/voices/not_found.mp3";
 
       case Rulesets.smiling:
         return "assets/voices/smile.mp3";
@@ -58,13 +61,20 @@ class __FaceDetectorState extends State<_FaceDetector> {
 
 
   Future<void> playVoice({required Rulesets rulesets}) async {
-    AssetsAudioPlayerPlus player = AssetsAudioPlayerPlus();
+    player = AssetsAudioPlayerPlus();
     try {
       await player.open(Audio(voiceType(rulesets: rulesets)));
       await player.play();
     } catch (error, stackTrace) {
       log("Voice Issue: $error", stackTrace: stackTrace, name: "Voice Player");
     }
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    player.dispose();
   }
 
 
@@ -80,27 +90,25 @@ class __FaceDetectorState extends State<_FaceDetector> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
 
-              ElevatedButton(
-                  onPressed: (){
-                    playVoice(rulesets: Rulesets.smiling);
-                  },
-                  child: Text("hello")
-              ),
-
-
               FaceDetectorView(
                 backgroundColor: Colors.transparent,
+                  hasFace: (bool hasFace){
+                    if(hasFace){
+                      player.pause();
+                    }else{
+                      playVoice(rulesets: Rulesets.notFound);
+                    }
+                  },
                   currentRuleset: (rulesets){
                     playVoice(rulesets: rulesets);
                   },
                   images: (image){
                     images.value.add(image);
                     setState(() {});
-                    print(images.value);
                     log("Captured Image: $image", name: "Image");
                   },
                   onSuccessValidation: (validated) {
-                    log('Face verification is completed', name: 'Validation');
+                    if(validated)  player.dispose();
                   },
                   onValidationDone: (controller) {
                     return const SizedBox.shrink();
@@ -163,7 +171,6 @@ class __FaceDetectorState extends State<_FaceDetector> {
                         ],
                       ),
                   onRulesetCompleted: (ruleset) {
-                    print("##############################################");
                     if (!_completedRuleset.contains(ruleset)) {
                       _completedRuleset.add(ruleset);
                     }
@@ -194,6 +201,9 @@ class __FaceDetectorState extends State<_FaceDetector> {
 String getHintText(Rulesets state) {
   String hint_ = '';
   switch (state) {
+
+    case Rulesets.notFound:
+      break;
     case Rulesets.smiling:
       hint_ = 'Please Smile';
       break;
@@ -214,6 +224,7 @@ String getHintText(Rulesets state) {
       break;
     case Rulesets.complete:
       hint_ = 'Complete';
+
   }
   return hint_;
 }
