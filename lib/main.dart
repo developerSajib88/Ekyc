@@ -1,10 +1,13 @@
+import 'dart:developer';
 import 'dart:io';
 
+import 'package:ekyc/nid_classifier.dart';
 import 'package:ekyc/view/face_detection_screen.dart';
 import 'package:ekyc/view/recognizer_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_document_scanner/google_mlkit_document_scanner.dart';
+import 'package:tflite_flutter/tflite_flutter.dart';
 
 void main() {
   runApp(const MyApp());
@@ -39,15 +42,29 @@ class _MyWidgetState extends State<MyWidget> {
   );
 
 
+  NIDClassifier nidClassifier = NIDClassifier();
   Future<void> scanDocument()async{
-    await DocumentScanner(options: documentOptions).scanDocument().then((document){
-      Navigator.push(context, MaterialPageRoute(builder: (context)=>
-          RecognizerScreen(
-              image: File(document.images[0])
-          )
-      ));
-    });
+    try {
+      await DocumentScanner(options: documentOptions).scanDocument().then((document){
+         nidClassifier.classifyNID(File(document.images[0]));
+         // Navigator.push(context, MaterialPageRoute(builder: (context)=>
+         //     RecognizerScreen(
+         //         image: File(document.images[0])
+         //     )
+         // ));
+      });
+    } on Exception catch (e,stackTrace) {
+      log("Document Scan: $e",stackTrace: stackTrace, name: "Document Scan");
+    }
 
+  }
+
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    Future.microtask(()=> nidClassifier.loadModel());
   }
 
 
