@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'dart:io';
+import 'package:assets_audio_player_plus/assets_audio_player.dart';
 import 'package:camera/camera.dart';
 import 'package:face_liveness_detection/face_liveness_detection.dart';
 import 'package:flutter/cupertino.dart';
@@ -25,6 +26,57 @@ class __FaceDetectorState extends State<_FaceDetector> {
   final List<Rulesets> _completedRuleset = [];
   final TextStyle _textStyle = const TextStyle();
   final ValueNotifier<List<XFile>> images = ValueNotifier<List<XFile>>([]);
+  late AssetsAudioPlayerPlus player;
+
+
+  String voiceType({required Rulesets rulesets}){
+    switch(rulesets){
+
+      case Rulesets.notFound:
+        return "assets/voices/not_found.mp3";
+
+      case Rulesets.smiling:
+        return "assets/voices/smile.mp3";
+
+      case Rulesets.blink:
+        return "assets/voices/blink.mp3";
+
+      case Rulesets.toRight:
+        return "assets/voices/right.mp3";
+
+      case Rulesets.toLeft:
+        return "assets/voices/left.mp3";
+
+      case Rulesets.tiltUp:
+        return "assets/voices/up.mp3";
+
+      case Rulesets.tiltDown:
+        return "assets/voices/down.mp3";
+
+      case Rulesets.complete:
+        return "assets/voices/complete.mp3";
+
+    }
+  }
+
+
+  Future<void> playVoice({required Rulesets rulesets}) async {
+    player = AssetsAudioPlayerPlus();
+    try {
+      await player.open(Audio(voiceType(rulesets: rulesets)));
+      await player.play();
+    } catch (error, stackTrace) {
+      log("Voice Issue: $error", stackTrace: stackTrace, name: "Voice Player");
+    }
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    player.dispose();
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -37,18 +89,29 @@ class __FaceDetectorState extends State<_FaceDetector> {
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+
               FaceDetectorView(
                 backgroundColor: Colors.transparent,
+                  hasFace: (bool hasFace){
+                    if(hasFace){
+                      player.pause();
+                    }else{
+                      playVoice(rulesets: Rulesets.notFound);
+                    }
+                  },
+                  currentRuleset: (rulesets){
+                    playVoice(rulesets: rulesets);
+                  },
                   images: (image){
                     images.value.add(image);
                     setState(() {});
-                    print(images.value);
                     log("Captured Image: $image", name: "Image");
                   },
                   onSuccessValidation: (validated) {
-                    log('Face verification is completed', name: 'Validation');
+                    if(validated) player.dispose();
                   },
                   onValidationDone: (controller) {
+                    player.dispose();
                     return const SizedBox.shrink();
                   },
                   child: ({required countdown, required state, required hasFace}) =>
@@ -139,6 +202,9 @@ class __FaceDetectorState extends State<_FaceDetector> {
 String getHintText(Rulesets state) {
   String hint_ = '';
   switch (state) {
+
+    case Rulesets.notFound:
+      break;
     case Rulesets.smiling:
       hint_ = 'Please Smile';
       break;
@@ -157,6 +223,9 @@ String getHintText(Rulesets state) {
     case Rulesets.toRight:
       hint_ = 'Please Look Right';
       break;
+    case Rulesets.complete:
+      hint_ = 'Complete';
+
   }
   return hint_;
 }
