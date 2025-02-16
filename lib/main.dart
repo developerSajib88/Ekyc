@@ -45,8 +45,9 @@ class _MyWidgetState extends State<MyWidget> {
   NIDClassifier nidClassifier = NIDClassifier();
   Future<void> scanDocument()async{
     try {
-      await DocumentScanner(options: documentOptions).scanDocument().then((document){
-         nidClassifier.classifyNID(File(document.images[0]));
+      await DocumentScanner(options: documentOptions).scanDocument().then((document)async{
+         String result = await nidClassifier.classifyNID(File(document.images[0]));
+         log(result);
          // Navigator.push(context, MaterialPageRoute(builder: (context)=>
          //     RecognizerScreen(
          //         image: File(document.images[0])

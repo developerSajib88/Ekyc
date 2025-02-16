@@ -49,13 +49,16 @@ class NIDClassifier {
   /// Run Model Inference
   Future<String> classifyNID(File imageFile) async {
     var input = preprocessImage(imageFile);
-    var output = List.filled(1 * 2, 0).reshape([1, 2]); // 2 classes: Fake & Real
+
+    // Ensure output is a List of doubles
+    var output = List.filled(1 * 2, 0.0).reshape([1, 2]); // Ensure float output
 
     _interpreter.run(input, output);
 
-    // Get the class with the highest probability
-    int predictedIndex = output[0].indexOf(output[0].reduce((a, b) => a > b ? a : b));
+    // Explicitly cast to List<double>
+    List<double> probabilities = List<double>.from(output[0]);
 
-    return predictedIndex == 1 ? "✅ Real NID" : "❌ Fake NID";
+    return probabilities.first >  probabilities.last ? "✅ Real NID" : "❌ Fake NID";
   }
+
 }
