@@ -207,6 +207,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.12.0"
+  google_mlkit_face_mesh_detection:
+    dependency: "direct main"
+    description:
+      name: google_mlkit_face_mesh_detection
+      sha256: aa2659c03f46cf69510a998e0bd14f23b9d3c7b0c9b1fe1050656ad80d6e24bd
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.0"
   google_mlkit_text_recognition:
     dependency: "direct main"
     description:

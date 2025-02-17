@@ -1,22 +1,27 @@
 import 'dart:developer';
 import 'dart:io';
 import 'package:assets_audio_player_plus/assets_audio_player.dart';
+import 'package:ekyc/mesh_matching.dart';
+import 'package:image/image.dart' as img;
 import 'package:camera/camera.dart';
 import 'package:face_liveness_detection/face_liveness_detection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
 class FaceDetectionScreen extends StatelessWidget {
-  const FaceDetectionScreen({super.key});
+  final File nidFaceImage;
+  const FaceDetectionScreen({super.key, required this.nidFaceImage});
 
   @override
   Widget build(BuildContext context) {
-    return const _FaceDetector();
+    return _FaceDetector(nidFaceImage: nidFaceImage);
   }
 }
 
 class _FaceDetector extends StatefulWidget {
-  const _FaceDetector();
+  final File nidFaceImage;
+  const _FaceDetector({required this.nidFaceImage});
 
   @override
   State<_FaceDetector> createState() => __FaceDetectorState();
@@ -70,6 +75,89 @@ class __FaceDetectorState extends State<_FaceDetector> {
     }
   }
 
+
+
+  /// Face Matching Code
+  ///
+  ///
+
+
+
+  Future<Face?> detectFace(File imageFile) async {
+    final inputImage = InputImage.fromFile(imageFile);
+    final faceDetector = FaceDetector(
+      options: FaceDetectorOptions(enableContours: true, enableLandmarks: true),
+    );
+
+    final List<Face> faces = await faceDetector.processImage(inputImage);
+    await faceDetector.close();
+
+    if (faces.isEmpty) {
+      print("No face detected.");
+      return null;
+    }
+
+    return faces.first; // Assuming the first detected face is the NID profile image
+  }
+
+
+  Future<File?> cropFace(File imageFile, Face face) async {
+    // Load the image
+    img.Image? originalImage = img.decodeImage(await imageFile.readAsBytes());
+    if (originalImage == null) return null;
+
+    // Get the bounding box of the detected face
+    final boundingBox = face.boundingBox;
+    int x = boundingBox.left.toInt();
+    int y = boundingBox.top.toInt();
+    int width = boundingBox.width.toInt();
+    int height = boundingBox.height.toInt();
+
+    // Ensure cropping values are within the image bounds
+    x = x.clamp(0, originalImage.width);
+    y = y.clamp(0, originalImage.height);
+    width = width.clamp(0, originalImage.width - x);
+    height = height.clamp(0, originalImage.height - y);
+
+    // Crop the face region
+    img.Image croppedFace = img.copyCrop(originalImage, x: x, y: y, width: width, height: height);
+
+    // Save the cropped image
+    File faceImageFile = File(imageFile.path.replaceAll('.jpg', '_face.jpg'))
+      ..writeAsBytesSync(img.encodeJpg(croppedFace));
+
+    return faceImageFile;
+  }
+
+
+
+
+  File? testImage;
+  double faceMatching = 0.0;
+
+  Future<void> detectFacesAndCompare() async {
+
+    File faceImage = File(images.value[0].path);
+
+    await detectFace(faceImage).then((face)async{
+      if(face != null){
+        await cropFace(File(images.value[0].path),face).then((croppedImage)async{
+            if(croppedImage != null){
+
+              testImage = croppedImage;
+              setState(() {});
+
+              faceMatching = await MeshMatching.matchFaces(File(images.value[0].path), croppedImage);
+              setState(() {});
+            }
+        });
+      }
+    });
+  }
+
+
+
+
   @override
   void dispose() {
     // TODO: implement dispose
@@ -85,113 +173,167 @@ class __FaceDetectorState extends State<_FaceDetector> {
       body: ValueListenableBuilder(
         valueListenable: images,
         builder: (context,__,_) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+          return SizedBox(
+            width: double.infinity,
+            height: double.infinity,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
 
-              FaceDetectorView(
-                backgroundColor: Colors.transparent,
-                  hasFace: (bool hasFace){
-                    if(hasFace){
-                      player.pause();
-                    }else{
-                      playVoice(rulesets: Rulesets.notFound);
+
+                if(images.value.length != 6)
+                FaceDetectorView(
+                  backgroundColor: Colors.transparent,
+                    hasFace: (bool hasFace){
+                      if(hasFace){
+                        player.pause();
+                      }else{
+                        playVoice(rulesets: Rulesets.notFound);
+                      }
+                    },
+                    currentRuleset: (rulesets){
+                      playVoice(rulesets: rulesets);
+                    },
+                    images: (image){
+                      images.value.add(image);
+                      setState(() {});
+                      log("Captured Image: $image", name: "Image");
+                    },
+                    onSuccessValidation: (validated) {
+                      if(validated) player.dispose();
+                    },
+                    onValidationDone: (controller) {
+                      player.dispose();
+                      return const SizedBox.shrink();
+                    },
+                    child: ({required countdown, required state, required hasFace}) =>
+                        Column(
+                          children: [
+
+                            Row(
+                                spacing: 10,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  // Image.asset('assets/face_verification_icon.png',
+                                  //     height: 30, width: 30),
+
+
+                                  const SizedBox(height: 50),
+
+                                  Flexible(
+                                      child: AnimatedSize(
+                                          duration: const Duration(milliseconds: 150),
+                                          child: Text(
+                                            hasFace
+                                                ? 'User face found'
+                                                : 'User face not found',
+                                            style: _textStyle.copyWith(
+                                                color: Colors.black,
+                                                fontWeight: FontWeight.w400,
+                                                fontSize: 12),
+                                          )))
+                                ]),
+                            Text(getHintText(state),
+                                style: _textStyle.copyWith(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 20)),
+                            if (countdown > 0)
+                              Text.rich(
+                                textAlign: TextAlign.center,
+                                TextSpan(children: [
+                                  const TextSpan(text: 'IN'),
+                                  const TextSpan(text: '\n'),
+                                  TextSpan(
+                                      text: countdown.toString(),
+                                      style: _textStyle.copyWith(
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 22))
+                                ]),
+                                style: _textStyle.copyWith(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16),
+                              )
+                            else ...[
+                              const SizedBox(height: 10),
+                              const CupertinoActivityIndicator()
+                            ],
+
+                          ],
+                        ),
+                    onRulesetCompleted: (ruleset) {
+                      if (!_completedRuleset.contains(ruleset)) {
+                        _completedRuleset.add(ruleset);
+                      }
                     }
-                  },
-                  currentRuleset: (rulesets){
-                    playVoice(rulesets: rulesets);
-                  },
-                  images: (image){
-                    images.value.add(image);
-                    setState(() {});
-                    log("Captured Image: $image", name: "Image");
-                  },
-                  onSuccessValidation: (validated) {
-                    if(validated) player.dispose();
-                  },
-                  onValidationDone: (controller) {
-                    player.dispose();
-                    return const SizedBox.shrink();
-                  },
-                  child: ({required countdown, required state, required hasFace}) =>
-                      Column(
+                    ),
+
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+
+
+                      Text("Match: ${faceMatching.toString()}"),
+
+
+                      if(testImage != null)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
+                          Image.file(
+                            testImage!,
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                          ),
 
-                          Row(
-                              spacing: 10,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                // Image.asset('assets/face_verification_icon.png',
-                                //     height: 30, width: 30),
+                          const SizedBox(width: 10),
 
+                          Image.file(
+                            widget.nidFaceImage,
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                          ),
 
-                                const SizedBox(height: 50),
-
-                                Flexible(
-                                    child: AnimatedSize(
-                                        duration: const Duration(milliseconds: 150),
-                                        child: Text(
-                                          hasFace
-                                              ? 'User face found'
-                                              : 'User face not found',
-                                          style: _textStyle.copyWith(
-                                              color: Colors.black,
-                                              fontWeight: FontWeight.w400,
-                                              fontSize: 12),
-                                        )))
-                              ]),
-                          Text(getHintText(state),
-                              style: _textStyle.copyWith(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 20)),
-                          if (countdown > 0)
-                            Text.rich(
-                              textAlign: TextAlign.center,
-                              TextSpan(children: [
-                                const TextSpan(text: 'IN'),
-                                const TextSpan(text: '\n'),
-                                TextSpan(
-                                    text: countdown.toString(),
-                                    style: _textStyle.copyWith(
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 22))
-                              ]),
-                              style: _textStyle.copyWith(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16),
-                            )
-                          else ...[
-                            const SizedBox(height: 10),
-                            const CupertinoActivityIndicator()
-                          ]
                         ],
                       ),
-                  onRulesetCompleted: (ruleset) {
-                    if (!_completedRuleset.contains(ruleset)) {
-                      _completedRuleset.add(ruleset);
-                    }
-                  }),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: images.value.map((image){
-                  return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Image.file(
-                      File(image.path),
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
-                    ),
-                  );
-                }).toList(),
-              )
-            ],
+
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: images.value.map((image){
+                          return Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Image.file(
+                              File(image.path),
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                            ),
+                          );
+                        }).toList(),
+                      ),
+
+
+                      if(images.value.isNotEmpty)
+                        ElevatedButton(
+                            onPressed: ()async{
+                              await detectFacesAndCompare();
+                            },
+                            child: const Text("Face Matching")
+                        )
+
+
+                    ],
+                  )
+
+              ],
+            ),
           );
         }
       ),

@@ -252,7 +252,13 @@ class _RecognizerScreenState extends State<RecognizerScreen> {
 
 
                                 ElevatedButton(
-                                    onPressed: ()=> Navigator.push(context, CupertinoPageRoute(builder: (context)=> const FaceDetectionScreen())),
+                                    onPressed: (){
+                                      if(nidFace.value != null){
+                                        Navigator.push(context, CupertinoPageRoute(
+                                            builder: (context)=> FaceDetectionScreen(nidFaceImage: nidFace.value!)
+                                        ));
+                                      }
+                                    },
                                     child: const Text("Face Verify")
                                 ),
 

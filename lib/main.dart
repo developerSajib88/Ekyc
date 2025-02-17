@@ -48,11 +48,11 @@ class _MyWidgetState extends State<MyWidget> {
       await DocumentScanner(options: documentOptions).scanDocument().then((document)async{
          String result = await nidClassifier.classifyNID(File(document.images[0]));
          log(result);
-         // Navigator.push(context, MaterialPageRoute(builder: (context)=>
-         //     RecognizerScreen(
-         //         image: File(document.images[0])
-         //     )
-         // ));
+         Navigator.push(context, MaterialPageRoute(builder: (context)=>
+             RecognizerScreen(
+                 image: File(document.images[0])
+             )
+         ));
       });
     } on Exception catch (e,stackTrace) {
       log("Document Scan: $e",stackTrace: stackTrace, name: "Document Scan");
@@ -94,10 +94,10 @@ class _MyWidgetState extends State<MyWidget> {
 
             const SizedBox(height: 10,),
 
-            ElevatedButton(
-                onPressed: ()=> Navigator.push(context, CupertinoPageRoute(builder: (context)=> const FaceDetectionScreen())),
-                child: const Text("Face Verify")
-            ),
+            // ElevatedButton(
+            //     onPressed: ()=> Navigator.push(context, CupertinoPageRoute(builder: (context)=> const FaceDetectionScreen())),
+            //     child: const Text("Face Verify")
+            // ),
 
 
           ],
