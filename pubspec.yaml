@@ -33,6 +33,7 @@ dependencies:
 
   cupertino_icons: ^1.0.8
   camera: any
+  dotted_border: ^2.1.0
   google_mlkit_text_recognition: ^0.14.0
   google_mlkit_document_scanner: ^0.3.0
   google_mlkit_face_detection: ^0.12.0

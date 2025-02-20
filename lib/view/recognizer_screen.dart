@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:ekyc/view/face_detection_screen.dart';
@@ -8,8 +9,9 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 import 'package:image/image.dart' as img;
 
 class RecognizerScreen extends StatefulWidget {
-  final File image;
-  const RecognizerScreen({super.key,required this.image});
+  final File frontPart;
+  final File backPart;
+  const RecognizerScreen({super.key,required this.frontPart, required this.backPart});
 
   @override
   State<RecognizerScreen> createState() => _RecognizerScreenState();
@@ -20,6 +22,7 @@ class _RecognizerScreenState extends State<RecognizerScreen> {
   ValueNotifier<bool> isLoading = ValueNotifier<bool>(true);
   ValueNotifier<bool> isNotNIDCard = ValueNotifier<bool>(false);
   ValueNotifier<Map<String,String>?> data = ValueNotifier<Map<String,String>?>(null);
+  ValueNotifier<String?> issueDate = ValueNotifier<String?>(null);
   ValueNotifier<File?> nidFace = ValueNotifier<File?>(null);
 
   // Future<void> recognizeText()async{
@@ -42,13 +45,25 @@ class _RecognizerScreenState extends State<RecognizerScreen> {
 
 
 
+  Future<void> detectFrontPart() async {
+
+    String extractedText = await extractText(widget.frontPart);
+    if(isNIDCard(extractedText)){
+      data.value = parseFrontPart(extractedText);
+    }else{
+      isNotNIDCard.value = true;
+    }
+    print("Extracted NID Data: ${data.value}");
+  }
 
 
 
 
   Future<String> extractText(File imageFile) async {
     final inputImage = InputImage.fromFile(imageFile);
-    final textRecognizer = TextRecognizer();
+    final textRecognizer = TextRecognizer(
+      script: TextRecognitionScript.devanagiri
+    );
     final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
     await textRecognizer.close();
 
@@ -57,7 +72,7 @@ class _RecognizerScreenState extends State<RecognizerScreen> {
 
 
 
-  Map<String, String>? parseNIDData(String text) {
+  Map<String, String>? parseFrontPart(String text) {
     Map<String, String> nidData = {};
 
     // Extract Name (assuming name follows "Name:")
@@ -99,21 +114,6 @@ class _RecognizerScreenState extends State<RecognizerScreen> {
     }
     return false;
   }
-
-
-  Future<void> detectNIDCard() async {
-
-    String extractedText = await extractText(widget.image);
-    if(isNIDCard(extractedText)){
-      data.value = parseNIDData(extractedText);
-    }else{
-      isNotNIDCard.value = true;
-    }
-    print("Extracted NID Data: ${data.value}");
-  }
-
-
-
 
   /// ======CAPTURED NID FACE==========
 
@@ -167,13 +167,13 @@ class _RecognizerScreenState extends State<RecognizerScreen> {
 
   Future<void> extractNIDProfileImage() async {
 
-    Face? face = await detectFace(widget.image);
+    Face? face = await detectFace(widget.frontPart);
     if (face == null) {
       print("No face found on the NID card.");
       return;
     }
 
-    File? faceImage = await cropFace(widget.image, face);
+    File? faceImage = await cropFace(widget.frontPart, face);
     if (faceImage != null) {
       nidFace.value = faceImage;
       print("Profile image extracted and saved at: ${faceImage.path}");
@@ -183,13 +183,62 @@ class _RecognizerScreenState extends State<RecognizerScreen> {
 
 
 
+
+  Future<void> detectBackPart() async {
+
+    String extractedText = await extractText(widget.backPart);
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>$extractedText");
+    if(isNIDBackPart(extractedText)){
+      issueDate.value = await parseBackPart(extractedText);
+    }else{
+      isNotNIDCard.value = true;
+    }
+    print("Extracted NID Data: ${issueDate.value}");
+  }
+
+
+  bool isNIDBackPart(String extractedText) {
+    List<String> nidBackKeywords = [
+      "গণপ্রজাতন্ত্রী বাংলাদেশ সরকার", // Government of Bangladesh
+      "প্রদানের তারিখ",                 // Issue Date
+      "ঠিকানা"                         // Address
+    ];
+
+    return nidBackKeywords.every((keyword) => extractedText.contains(keyword));
+  }
+
+
+
+  Future<String?> parseBackPart(String text) async {
+
+      // Define regular expression
+      RegExp regExp = RegExp(
+        r"প্রদানের\s*তারিখ[:\s]*([\u09E6-\u09EF]{2}/[\u09E6-\u09EF]{2}/[\u09E6-\u09EF]{4})",
+        unicode: true,
+      );
+      // Match text and extract issue date
+      final match = regExp.firstMatch(text);
+      if (match != null) {
+        return match.group(1); // Return the first capture group (the date)
+      } else {
+        print("প্রদানের *তারিখ[:]*({2}/{2}/{4})");
+        return null; // No date found
+      }
+
+  }
+
+
+
+
   @override
   void initState(){
     // TODO: implement initState
     super.initState();
-    detectNIDCard().whenComplete((){
+    detectFrontPart().whenComplete((){
       extractNIDProfileImage().whenComplete((){
-        isLoading.value = false;
+        detectBackPart().whenComplete((){
+          isLoading.value = false;
+        });
       });
     });
   }
@@ -249,6 +298,7 @@ class _RecognizerScreenState extends State<RecognizerScreen> {
                                 const SizedBox(height: 10),
                                 Text("ID Number : ${data.value?["ID Number"]}"),
                                 const SizedBox(height: 10),
+                                Text("Issue Date : ${issueDate.value}"),
 
 
                                 ElevatedButton(

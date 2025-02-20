@@ -112,9 +112,9 @@ class _CapturedScreenState extends State<CapturedScreen> {
                         bottom: 30,
                         child: InkWell(
                           onTap: ()async{
-                            await controller.takePicture().then((image){
-                              Navigator.push(context, CupertinoPageRoute(builder: (context)=> RecognizerScreen(image: File(image.path))));
-                            });
+                            // await controller.takePicture().then((image){
+                            //   //Navigator.push(context, CupertinoPageRoute(builder: (context)=> RecognizerScreen(image: File(image.path))));
+                            // });
                           },
                           child: const CircleAvatar(
                             radius: 35,
