@@ -147,7 +147,7 @@ class __FaceDetectorState extends State<_FaceDetector> {
               testImage = croppedImage;
               setState(() {});
 
-              faceMatching = await MeshMatching.matchFaces(File(images.value[0].path), croppedImage);
+              faceMatching = await FaceRecognition.matchFaces(File(images.value[0].path), croppedImage);
               setState(() {});
             }
         });
@@ -207,6 +207,7 @@ class __FaceDetectorState extends State<_FaceDetector> {
                       player.dispose();
                       return const SizedBox.shrink();
                     },
+                    ruleset: const [Rulesets. smiling],
                     child: ({required countdown, required state, required hasFace}) =>
                         Column(
                           children: [
